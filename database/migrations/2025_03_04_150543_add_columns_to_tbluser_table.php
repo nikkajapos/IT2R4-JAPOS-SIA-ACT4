@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up() {
         Schema::table('tbluser', function (Blueprint $table) {
             if (!Schema::hasColumn('tbluser', 'username')) {
-                $table->string('username')->after('name');
+                $table->string('username')->after('id');
             }
             if (!Schema::hasColumn('tbluser', 'gender')) {
                 $table->string('gender')->after('password');

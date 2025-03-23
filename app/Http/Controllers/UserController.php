@@ -2,46 +2,90 @@
 
 namespace App\Http\Controllers;
 
-use Laravel\Lumen\Routing\Controller as BaseController;
-use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Traits\ApiResponser;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use DB;
 
-class UserController extends BaseController {
+class UserController extends Controller
+{
+    use ApiResponser;
+
+    private $request;
+
+    public function __construct(Request $request)
+    {
+        $this->request = $request;
+    }
+
+    public function getUsers()
+    {
+        // Using raw SQL query instead of Eloquent
+        $users = DB::connection('mysql')
+            ->select("SELECT * FROM tbluser");
+
+        return $this->successResponse($users);
+    }
+
+    public function index()
+    {
+        $users = User::all();
+        return response()->json([
+            'data' => $users->values(),
+            'site' => 2
+        ]);
+    }
     
-    public function index() {
-        return response()->json(User::all(), 200);
+    
+
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
+            return $this->successResponse($user);
+    }
+    
+    public function add(Request $request)
+    {
+        $rules = [
+            'username' => 'required|max:20',
+            'password' => 'required|max:20',
+            'gender' => 'required|in:Male,Female'
+        ];
+
+        $this->validate($request, $rules);
+        $user = User::create($request->all());
+        return $this->successResponse($user, Response:: HTTP_CREATED);
+    }
+    public function update(Request $request, $id)
+    {
+         $rules = [
+        'username' => 'max:20',
+        'password' => 'max:20',
+        'gender' => 'in:Male,Female',
+    ];
+
+         $this->validate($request, $rules);
+         $user = User::findOrFail($id);
+
+         $user->fill($request->all());
+
+    // If no changes happen
+    if ($user->isClean()) {
+        return $this->errorResponse('At least one value must change', Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
-    public function store(Request $request) {
-        try {
-            $this->validate($request, [
-                'name' => 'required|string|max:255',
-                'username' => 'required|string|max:255|unique:users',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:6',
-                'gender' => 'required|string|in:Male,Female,Other'
-            ]);
-
-            // Create a new user
-            $user = User::create([
-                'name' => $request->name,
-                'username' => $request->username,
-                'email' => $request->email,
-                'password' => Hash::make($request->password), // Fixed bcrypt error
-                'gender' => $request->gender
-            ]);
-
-            return response()->json([
-                'message' => 'User created successfully!',
-                'user' => $user
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'User registration failed!',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    $user->save();
+    return $this->successResponse($user);
     }
+
+    public function delete($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+    
+        return $this->successResponse($user);
+    }
+     
+
 }
