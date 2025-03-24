@@ -33,10 +33,9 @@ class UserController extends Controller
         $users = User::all();
         return response()->json([
             'data' => $users->values(),
-            'site' => 2
+            'site' => 1
         ]);
     }
-    
     
 
     public function show($id)
