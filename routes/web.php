@@ -3,8 +3,12 @@
 /** @var \Laravel\Lumen\Routing\Router $router */
 
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return response()->json([
+        'status' => 'OK',
+        'version' => $router->app->version()
+    ]);
 });
+
 
 $router->group(['prefix' => 'api'], function ()use ($router){
     $router->get('/users',['uses' => 'UserController@getUsers']);
